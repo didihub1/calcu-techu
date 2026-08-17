@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Techumbres</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --border: #e5e7eb;
+            --bg: #ffffff;
+            --bg-body: transparent; /* Ideal para Notion */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h2 { margin: 0; font-size: 1.5rem; }
+        .header p { margin: 5px 0 0 0; font-size: 0.9rem; opacity: 0.9; }
+
+        .content { padding: 24px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        input[type="number"] {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus { border-color: var(--primary); }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .radio-option {
+            flex: 1;
+            position: relative;
+        }
+
+        .radio-option input[type="radio"] {
+            display: none;
+        }
+
+        .radio-option label {
+            display: block;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0;
+            transition: all 0.2s;
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            color: var(--primary);
+        }
+
+        .results {
+            background-color: var(--primary-light);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .results h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .result-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .result-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .svg-container {
+            width: 100%;
+            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        svg { max-width: 100%; height: auto; }
+        
+        /* SVG Styles */
+        .svg-line { stroke: var(--primary); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round;}
+        .svg-fill { fill: var(--primary); opacity: 0.1; }
+        .svg-dashed { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 5,5; fill: none; }
+        .svg-text { fill: var(--text-main); font-family: sans-serif; font-size: 14px; font-weight: 600; text-anchor: middle; }
+        .svg-measure { stroke: var(--text-muted); stroke-width: 1; fill: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>Calculadora de Techumbres</h2>
+        <p>Calcula alturas, pendientes y cubiertas a 1 y 2 aguas</p>
+    </div>
+
+    <div class="content">
+        <!-- Controles -->
+        <div class="grid">
+            <div class="form-group">
+                <label>Largo total (m)</label>
+                <input type="number" id="largo" value="5.00" step="0.01" min="0.1">
+            </div>
+
+            <div class="form-group">
+                <label>Estilo de techo</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="agua1" name="aguas" value="1">
+                        <label for="agua1">1 Agua</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="agua2" name="aguas" value="2" checked>
+                        <label for="agua2">2 Aguas</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de pendiente</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="tipoPct" name="tipoPendiente" value="porcentaje" checked>
+                        <label for="tipoPct">Porcentaje (%)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="tipoGrd" name="tipoPendiente" value="grados">
+                        <label for="tipoGrd">Grados (°)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label id="lblPendiente">Valor de pendiente (%)</label>
+                <input type="number" id="pendiente" value="20.0" step="0.1" min="0">
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="results">
+            <h3>Resultados del cálculo</h3>
+            <div class="results-grid">
+                <div class="result-item">
+                    <div class="result-label">Altura máxima</div>
+                    <div class="result-val" id="resAltura">0.00 m</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Longitud cubierta (1 lado)</div>
+                    <div class="result-val" id="resLongitud">0.00 m</div>
+                </div>
+                <div class="result-item" id="cajaLongitudTotal">
+                    <div class="result-label">Cubierta total (2 lados)</div>
+                    <div class="result-val" id="resLongitudTotal">0.00 m</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Equivalencia de pendiente</div>
+                    <div class="result-val" id="resEquivalencia">0.00°</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualización -->
+        <div class="svg-container" id="svgContainer">
+            <!-- El SVG se inyecta por JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Referencias a elementos
+    const inputLargo = document.getElementById('largo');
+    const inputPendiente = document.getElementById('pendiente');
+    const radiosAguas = document.querySelectorAll('input[name="aguas"]');
+    const radiosTipo = document.querySelectorAll('input[name="tipoPendiente"]');
+    const lblPendiente = document.getElementById('lblPendiente');
+    
+    const resAltura = document.getElementById('resAltura');
+    const resLongitud = document.getElementById('resLongitud');
+    const resLongitudTotal = document.getElementById('resLongitudTotal');
+    const cajaLongitudTotal = document.getElementById('cajaLongitudTotal');
+    const resEquivalencia = document.getElementById('resEquivalencia');
+    const svgContainer = document.getElementById('svgContainer');
+
+    // Event Listeners
+    inputLargo.addEventListener('input', calcular);
+    inputPendiente.addEventListener('input', calcular);
+    
+    radiosAguas.forEach(r => r.addEventListener('change', calcular));
+    radiosTipo.forEach(r => r.addEventListener('change', (e) => {
+        lblPendiente.textContent = e.target.value === 'porcentaje' ? 'Valor de pendiente (%)' : 'Valor de pendiente (°)';
+        calcular();
+    }));
+
+    // Función principal
+    function calcular() {
+        const largoTotal = parseFloat(inputLargo.value);
+        const valorPendiente = parseFloat(inputPendiente.value);
+        const tipoAguas = document.querySelector('input[name="aguas"]:checked').value;
+        const tipoPendiente = document.querySelector('input[name="tipoPendiente"]:checked').value;
+
+        if (isNaN(largoTotal) || isNaN(valorPendiente) || largoTotal <= 0 || valorPendiente < 0) {
+            return; // Valores inválidos
+        }
+
+        // 1. Determinar el largo de cálculo
+        const isDosAguas = tipoAguas === '2';
+        const largoCalculo = isDosAguas ? largoTotal / 2 : largoTotal;
+
+        // Mostrar u ocultar total de cubierta
+        cajaLongitudTotal.style.display = isDosAguas ? 'block' : 'none';
+
+        // 2. Convertir pendientes
+        let grados = 0;
+        let porcentaje = 0;
+
+        if (tipoPendiente === 'porcentaje') {
+            porcentaje = valorPendiente;
+            grados = Math.atan(porcentaje / 100) * (180 / Math.PI);
+            resEquivalencia.textContent = grados.toFixed(2) + '°';
+        } else {
+            grados = valorPendiente;
+            // Prevenir 90 grados
+            if(grados >= 90) grados = 89.99; 
+            porcentaje = Math.tan(grados * Math.PI / 180) * 100;
+            resEquivalencia.textContent = porcentaje.toFixed(2) + '%';
+        }
+
+        // 3. Cálculos Trigonométricos
+        const altura = largoCalculo * Math.tan(grados * Math.PI / 180);
+        const longitudVertiente = Math.sqrt(Math.pow(largoCalculo, 2) + Math.pow(altura, 2));
+
+        // Actualizar textos
+        resAltura.textContent = altura.toFixed(2) + ' m';
+        resLongitud.textContent = longitudVertiente.toFixed(2) + ' m';
+        if (isDosAguas) {
+            resLongitudTotal.textContent = (longitudVertiente * 2).toFixed(2) + ' m';
+        }
+
+        // Dibujar SVG
+        dibujarSVG(largoTotal, altura, isDosAguas, longitudVertiente);
+    }
+
+    // Dibujo del gráfico
+    function dibujarSVG(largo, altura, isDosAguas, longitudVertiente) {
+        // Lienzo base
+        const svgW = 600;
+        const svgH = 300;
+        const paddingX = 60;
+        const paddingY = 50;
+
+        const maxDrawW = svgW - (paddingX * 2);
+        const maxDrawH = svgH - (paddingY * 2);
+
+        // Factor de escala para mantener proporciones
+        const scaleX = maxDrawW / largo;
+        const scaleY = maxDrawH / altura;
+        const scale = Math.min(scaleX, scaleY);
+
+        const drawW = largo * scale;
+        const drawH = altura * scale;
+
+        // Centrar en el lienzo
+        const offsetX = (svgW - drawW) / 2;
+        const offsetY = svgH - paddingY; // Y base
+
+        let svgContent = `<svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+
+        if (isDosAguas) {
+            // Coordenadas Triángulo Isósceles
+            const x0 = offsetX;
+            const y0 = offsetY;
+            const x1 = offsetX + drawW;
+            const y1 = offsetY;
+            const xMid = offsetX + (drawW / 2);
+            const yTop = offsetY - drawH;
+
+            // Relleno
+            svgContent += `<polygon points="${x0},${y0} ${x1},${y1} ${xMid},${yTop}" class="svg-fill" />`;
+            // Base
+            svgContent += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" class="svg-line" stroke-width="2" stroke="#4b5563"/>`;
+            // Techos
+            svgContent += `<line x1="${x0}" y1="${y0}" x2="${xMid}" y2="${yTop}" class="svg-line"/>`;
+            svgContent += `<line x1="${xMid}" y1="${yTop}" x2="${x1}" y2="${y1}" class="svg-line"/>`;
+            // Altura central
+            svgContent += `<line x1="${xMid}" y1="${y0}" x2="${xMid}" y2="${yTop}" class="svg-dashed"/>`;
+
+            // Textos y cotas
+            // Largo Total
+            svgContent += `<line x1="${x0}" y1="${y0+20}" x2="${x1}" y2="${y0+20}" class="svg-measure"/>`;
+            svgContent += `<line x1="${x0}" y1="${y0+15}" x2="${x0}" y2="${y0+25}" class="svg-measure"/>`;
+            svgContent += `<line x1="${x1}" y1="${y0+15}" x2="${x1}" y2="${y0+25}" class="svg-measure"/>`;
+            svgContent += `<text x="${xMid}" y="${y0+35}" class="svg-text">Base Total: ${largo.toFixed(2)}m</text>`;
+
+            // Altura
+            svgContent += `<text x="${xMid + 5}" y="${offsetY - (drawH/2)}" class="svg-text" style="text-anchor: start;">H: ${altura.toFixed(2)}m</text>`;
+
+            // Longitud agua
+            const lblX = x0 + (drawW/4) - 15;
+            const lblY = offsetY - (drawH/2) - 15;
+            svgContent += `<text x="${lblX}" y="${lblY}" class="svg-text" fill="#2563eb">Cubierta: ${longitudVertiente.toFixed(2)}m</text>`;
+
+        } else {
+            // Coordenadas Triángulo Rectángulo
+            const x0 = offsetX;
+            const y0 = offsetY;
+            const x1 = offsetX + drawW;
+            const y1 = offsetY;
+            const yTop = offsetY - drawH;
+
+            // Relleno
+            svgContent += `<polygon points="${x0},${y0} ${x1},${y1} ${x1},${yTop}" class="svg-fill" />`;
+            // Base
+            svgContent += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" class="svg-line" stroke-width="2" stroke="#4b5563"/>`;
+            // Altura lateral derecha
+            svgContent += `<line x1="${x1}" y1="${y1}" x2="${x1}" y2="${yTop}" class="svg-dashed"/>`;
+            // Techo
+            svgContent += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${yTop}" class="svg-line"/>`;
+
+            // Textos y cotas
+            // Largo Total
+            svgContent += `<line x1="${x0}" y1="${y0+20}" x2="${x1}" y2="${y0+20}" class="svg-measure"/>`;
+            svgContent += `<line x1="${x0}" y1="${y0+15}" x2="${x0}" y2="${y0+25}" class="svg-measure"/>`;
+            svgContent += `<line x1="${x1}" y1="${y0+15}" x2="${x1}" y2="${y0+25}" class="svg-measure"/>`;
+            svgContent += `<text x="${offsetX + (drawW/2)}" y="${y0+35}" class="svg-text">Base: ${largo.toFixed(2)}m</text>`;
+
+            // Altura
+            svgContent += `<text x="${x1 + 10}" y="${offsetY - (drawH/2)}" class="svg-text" style="text-anchor: start;">H: ${altura.toFixed(2)}m</text>`;
+
+            // Longitud agua
+            const lblX = offsetX + (drawW/2) - 10;
+            const lblY = offsetY - (drawH/2) - 15;
+            svgContent += `<text x="${lblX}" y="${lblY}" class="svg-text" fill="#2563eb">Cubierta: ${longitudVertiente.toFixed(2)}m</text>`;
+        }
+
+        svgContent += `</svg>`;
+        svgContainer.innerHTML = svgContent;
+    }
+
+    // Inicializar
+    calcular();
+</script>
+</body>
+</html>
